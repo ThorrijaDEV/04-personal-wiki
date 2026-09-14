@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas — enciclopedia personal</title>
+<style>
+  :root { --bg:#0d1117; --p:#161b22; --p2:#1c232d; --line:#2b3440; --tx:#c9d1d9; --dim:#8b98a5; --acc:#58a6ff; --warn:#d29922; --good:#3fb950; --bad:#f85149; --sel:#f2cc60; }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{background:var(--bg);color:var(--tx);font:14px/1.6 system-ui,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--p)}
+  header h1{font-size:16px;margin:0;color:#fff;white-space:nowrap} header h1 span{color:var(--acc)}
+  .spacer{flex:1}
+  #search{width:38vw;padding:6px 10px;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:6px}
+  button{background:#21262d;color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:13px}
+  button:hover{border-color:var(--acc);color:var(--acc)}
+  button.primary{background:#1f6feb;border-color:#1f6feb;color:#fff}
+  button.primary:hover{background:#388bfd;color:#fff}
+  button.on{border-color:var(--sel);color:var(--sel)}
+  button:disabled{opacity:.4}
+  #stats{font-size:11px;color:var(--dim)}
+  main{flex:1;display:grid;grid-template-columns:260px 1fr;min-height:0}
+  #sidebar,#stage{display:flex;flex-direction:column;min-height:0}
+  #sidebar{border-right:1px solid var(--line);background:var(--p);padding:8px 6px 4px}
+  #sidebar h2{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:4px 6px 6px}
+  #concept-list{flex:1;overflow-y:auto;padding:0 4px}
+  .c{padding:4px 8px;border-radius:5px;font-size:12px;cursor:pointer;margin:1px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent}
+  .c:hover{background:var(--p2)} .c.active{border-color:var(--acc);background:#10141b}
+  .c .bar{display:inline-block;height:6px;background:var(--acc);border-radius:2px;margin-right:6px;vertical-align:middle}
+  #stage{position:relative;padding:0}
+  #article-wrap{flex:1;overflow-y:auto;padding:18px 24px}
+  #results-wrap{flex:1;overflow-y:auto;padding:14px 20px}
+  #results-wrap h2{font-size:14px;margin:0 0 10px;color:#fff}
+  .r{padding:10px 14px;border:1px solid var(--line);border-radius:6px;margin:6px 0;background:var(--panel)}
+  .r h3{margin:0;font-size:14px;color:#fff;cursor:pointer}.r h3:hover{color:var(--acc)}
+  .r .meta{color:var(--dim);font-size:11px;margin:2px 0 6px}
+  .r p{margin:4px 0;font-size:13px}
+  #article-title{font-size:20px;font-weight:600;color:#fff;margin:0 0 4px}
+  #article-meta{color:var(--dim);font-size:12px;margin-bottom:14px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+  .badge-high{background:rgba(63,185,80,.15);color:var(--good)}
+  .badge-mid{background:rgba(210,153,34,.15);color:var(--warn)}
+  .badge-low{background:rgba(248,81,73,.15);color:var(--bad)}
+  .def{border-left:3px solid var(--acc);padding:6px 12px;margin:8px 0;background:rgba(88,166,255,.06);font-style:italic;font-size:13px}
+  .sec-title{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:16px 0 6px}
+  .p{padding:4px 0;font-size:13px;line-height:1.7}
+  .p .src{color:var(--dim);font-size:11px}
+  .chips{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+  .chip{background:var(--p2);border:1px solid var(--line);border-radius:5px;padding:3px 8px;font-size:12px;cursor:pointer}
+  .chip:hover{border-color:var(--acc);color:var(--acc)}
+  a.link{color:var(--acc);text-decoration:none;cursor:pointer} a.link:hover{text-decoration:underline}
+  #empty{display:flex;align-items:center;justify-content:center;color:var(--dim);flex:1}
+  #empty .big{font-size:36px;text-align:center}
+  #ingest-wrap{border-top:1px solid var(--line);background:var(--p2);padding:10px 14px}
+  #ingest-wrap summary{cursor:pointer;color:var(--dim);font-size:12px;user-select:none}
+  #ingest-wrap textarea{width:100%;height:60px;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;margin:6px 0;resize:vertical}
+  #ingest-wrap input{width:160px;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:12px}
+  #toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:var(--p);border:1px solid var(--line);padding:8px 18px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:100}
+  #graph-overlay{position:absolute;inset:0;background:rgba(13,17,23,.92);z-index:50;display:none}
+  #graph-overlay.open{display:flex;flex-direction:column}
+  #graph-head{padding:6px 14px;display:flex;gap:8px;border-bottom:1px solid var(--line)}
+  #graph-canvas{flex:1;background:var(--bg)}
+  #graph-head h2{margin:0;font-size:13px;color:#fff}
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 <span>Atlas</span></h1>
+  <span id="stats">—</span>
+  <div class="spacer"></div>
+  <input id="search" placeholder="buscar conceptos o texto…" spellcheck="false">
+  <button id="btn-search" class="primary">Buscar</button>
+  <button id="btn-graph" title="Mapa del conocimiento">🗺</button>
+</header>
+<main>
+  <aside id="sidebar">
+    <h2>Conceptos principales</h2>
+    <div id="concept-list"></div>
+  </aside>
+  <section id="stage">
+    <div id="article-wrap" style="display:none"></div>
+    <div id="results-wrap" style="display:none"></div>
+    <div id="empty"><div class="big">Escribe una consulta o pulsa un concepto del lateral<br><small>Atlas extrae el conocimiento de tus textos y lo enlaza automáticamente</small></div></div>
+    <details id="ingest-wrap" style="display:none">
+      <summary>Añadir conocimiento manual</summary>
+      <textarea id="ingest-text" placeholder="Pega aquí un fragmento de texto…"></textarea>
+      <input id="ingest-source" placeholder="fuente (opcional)">
+      <button id="btn-ingest" class="primary">Añadir</button>
+    </details>
+    <div id="graph-overlay">
+      <div id="graph-head"><h2>Mapa del conocimiento</h2><button id="btn-close-graph">Cerrar</button></div>
+      <canvas id="graph-canvas"></canvas>
+    </div>
+  </section>
+</main>
+<div id="toast"></div>
+<script src="js/web.js"></script>
+</body>
+</html>
